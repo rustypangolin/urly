@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-<<<<<<< HEAD
 import sys
 from tld import get_fld
 from tld.utils import update_tld_names
@@ -123,10 +122,6 @@ def setLogging(verbosity, quiet):
 		logging.basicConfig(format=logFormat, level=logging.WARNING)
 	else:
 		logging.basicConfig(format=logFormat, level=logging.INFO)
-=======
-def main():
-	print('It\'s alive!')
->>>>>>> be8520040b3fcb73ff40190722e13f49e4ca845c
 
 if __name__ == "__main__":
 	main()
