@@ -26,12 +26,35 @@ def main():
 	isIP = checkIP(args.data)
 
 	if isIP == False:
-		checkDomain(args.data, args.refresh_domains)
+		logging.debug('domain!')
+		domain = checkDomain(args.data, args.refresh_domains)
+		urlVoidResults = urlVoid(domain)
+
+		if urlVoidResults:
+			if urlVoidResults[8] > 0:
+				status = 'BLACKLISTED'
+			else:
+				status = 'POSSIBLY SAFE'
+			logging.info('\nHostname Information:')
+			logging.warning('Result: ' + status + ' ' + urlVoidResults[2])
+			logging.info('Scan date: ' + urlVoidResults[0])
+			logging.info('Hostname: ' + urlVoidResults[1])
+			logging.info('IP: ' + urlVoidResults[3])
+			logging.info('Reverse DNS: ' + urlVoidResults[4])
+			logging.info('Domain age: ' + urlVoidResults[5])
+			logging.info('ASN: ' + urlVoidResults[6])
+			logging.info('Country: ' + urlVoidResults[7])
+
+			if urlVoidResults[8] > 0:
+				logging.info('\nDetected on the following engines:')
+				for i in urlVoidResults[9]:
+					logging.info('-' + i)
+
 	elif isIP == True:
-		logging.info('ip!')
+		logging.debug('ip!')
 		ipVoidResults = ipVoid(args.data)
 		if ipVoidResults:
-			logging.info('IP Address Information:')
+			logging.info('\nIP Address Information:')
 			logging.warning('Result: ' + ipVoidResults[7])
 			logging.info('Scan date: ' + ipVoidResults[0])
 			logging.info('IP: ' + ipVoidResults[1])
@@ -42,7 +65,7 @@ def main():
 			logging.info('Country: ' + ipVoidResults[6])
 
 			if ipVoidResults[8] > 0:
-				logging.info('Detected on the following engines:')
+				logging.info('\nDetected on the following engines:')
 				for i in ipVoidResults[9]:
 					logging.info('-' + i)
 
@@ -51,10 +74,11 @@ def checkDomain(data, refresh):
 		logging.debug('Refreshing TLD database.')
 		update_tld_names()
 	try:
-		logging.warning(get_fld(data, fix_protocol=True))
+		domain = get_fld(data, fix_protocol=True)
 	except Exception as e:
 		logging.warning(e)
 		sys.exit(0)
+	return domain
 
 def checkIP(data):
 	logging.debug('Checking if the input is an IP address.')
@@ -77,41 +101,60 @@ def checkIP(data):
 def ipVoid(data):
 	r = requests.post('http://www.ipvoid.com/ip-blacklist-check/', data = {'ip': data})
 	soup = BeautifulSoup(r.text, 'html.parser')
-	aDateRow = soup.find_all('tr')[0]
-	aDate = aDateRow.find_all('td')[1].text
 
-	aIPRow = soup.find_all('tr')[3]
-	aIP = aIPRow.find_all('strong')[0].text
-
-	aRevRow = soup.find_all('tr')[4]
-	aRev = aRevRow.find_all('td')[1].text
-
-	aASNRow = soup.find_all('tr')[5]
-	aASN = aASNRow.find_all('a')[0].text
-
-	aASNOwnerRow = soup.find_all('tr')[6]
-	aASNOwner = aASNOwnerRow.find_all('td')[1].text
-
-	aISPRow = soup.find_all('tr')[7]
-	aISP = aISPRow.find_all('td')[1].text
-
-	aCountryRow = soup.find_all('tr')[9]
-	aCountry = aCountryRow.find_all('td')[1].text
-
+	aDate = soup.find_all('tr')[0].find_all('td')[1].text
+	aIP = soup.find_all('tr')[3].find_all('strong')[0].text
+	aRev = soup.find_all('tr')[4].find_all('td')[1].text
+	aASN = soup.find_all('tr')[5].find_all('a')[0].text
+	aASNOwner = soup.find_all('tr')[6].find_all('td')[1].text
+	aISP = soup.find_all('tr')[7].find_all('td')[1].text
+	aCountry = soup.find_all('tr')[9].find_all('td')[1].text
 	aStatus = soup.find('span', class_='label label-warning').text
 
 	detectionCount = re.search('BLACKLISTED (.+?)/', aStatus)
 	if detectionCount:
 		detectionList = ipVoidLists(soup, detectionCount.group(1))
+	else:
+		detectionList = []
 	return aDate, aIP, aRev, aASN, aASNOwner, aISP, aCountry, aStatus, int(detectionCount.group(1)), detectionList
 
 def ipVoidLists(data, count):
-	detectionList=[]
+	detectionList = []
 
 	aDetections = data.find_all('table', class_='table table-striped table-bordered')[1]
 
 	for i in range(int(count)):
 		detectionList.append(aDetections.find_all('td')[i].text)
+	return detectionList
+
+def urlVoid(data):
+	r = requests.get('https://www.urlvoid.com/scan/' + data)
+	soup = BeautifulSoup(r.text, 'html.parser')
+
+	table = soup.find_all("table")[0]
+	aDate = re.search('(.*)\|.*', table.find_all('tr')[1].find_all('td')[1].text)
+	aStatus = table.find_all('tr')[2].find_all('td')[1].text
+	aDomainAge = table.find_all('tr')[3].find_all('td')[1].text
+	aIP = table.find_all('tr')[5].find_all('td')[1].find('strong').text
+	aRev = table.find_all('tr')[6].find_all('td')[1].text
+	aASN = table.find_all('tr')[7].find_all('td')[1].text
+	aCountry = table.find_all('tr')[8].find_all('td')[1].text
+
+	detectionCount = re.search('(.+?)/', aStatus)
+	if detectionCount:
+		detectionList = urlVoidLists(soup, detectionCount.group(1))
+	else:
+		detectionList = []
+
+	return aDate.group(1), data, aStatus, aIP, aRev, aDomainAge, aASN, aCountry, int(detectionCount.group(1)), detectionList
+
+def urlVoidLists(data, count):
+	detectionList = []
+
+	aDetections = data.find_all('table', class_='table table-custom table-striped')[1]
+
+	for i in range(1,int(count)+1):
+		detectionList.append(aDetections.find_all('tr')[i].find_all('td')[0].text)
 	return detectionList
 
 def setLogging(verbosity, quiet):
