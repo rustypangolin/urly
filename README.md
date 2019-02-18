@@ -1,7 +1,7 @@
 # urly
 
-URLY is a nifty little python tool used to pull threat intelligence on IOCs
-Currently has support for IP address via ipVoid and domains vis urlVoid with
+URLY is a nifty little python tool used to pull threat intelligence on IOCs.
+Currently has support for IP address via ipvoid and domains via urlvoid with
 dynamic input detection, so you don't have to tell the app what you're feeding!
 
 Requires:
