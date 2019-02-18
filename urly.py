@@ -1,5 +1,23 @@
 #!/usr/bin/python3
 
+################################################################################
+#  URLY is a nifty little python tool used to pull threat intelligence on IOCs #
+#  Copyright (C) 2019  rustypangolin                                           #
+#                                                                              #
+#  This program is free software: you can redistribute it and/or modify        #
+#  it under the terms of the GNU General Public License as published by        #
+#  the Free Software Foundation, either version 3 of the License, or           #
+#  (at your option) any later version.                                         #
+#                                                                              #
+#  This program is distributed in the hope that it will be useful,             #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+#  GNU General Public License for more details.                                #
+#                                                                              #
+#  You should have received a copy of the GNU General Public License           #
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.      #
+################################################################################
+
 import sys
 from tld import get_fld
 from tld.utils import update_tld_names
@@ -9,9 +27,18 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 import re
+import textwrap
 
 def main():
-	parser = argparse.ArgumentParser(description='Get threat intel on a hostname, IP using widely available sources.')
+	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, \
+	description='Get threat intel on a hostname, IP using widely available sources.', \
+	epilog=textwrap.dedent('''\
+	URLY  Copyright (C) 2019  rustypangolin
+	This program comes with ABSOLUTELY NO WARRANTY;
+	for details check GNU General Public License<https://www.gnu.org/licenses/>.
+	This is free software, and you are welcome to redistribute it under certain
+	conditions; check GNU General Public License <https://www.gnu.org/licenses/>
+	for details.'''))
 	parser.add_argument('data', metavar='host', help='hostname or IP to check')
 	#parser.add_argument('--bulk', action='store_true', help='specify if you want to read a file list of hosts to scan')
 	#parser.add_argument('--local', action='store_true', help='only query local db')
