@@ -1,3 +1,5 @@
+Abandoned, there are better tools for the job out there.
+
 # urly
 
 URLY is a nifty little python tool used to pull threat intelligence on IOCs.
